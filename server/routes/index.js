@@ -1,7 +1,35 @@
 import { Router } from "express";
 import clientProvider from "../../utils/clientProvider.js";
+import StoreModel from "../../utils/models/StoreModel.js";
+import {
+  getShopContextStats,
+  invalidateShopContext,
+} from "../middleware/shopContext.js";
 
 const userRoutes = Router();
+
+/**
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ */
+userRoutes.get("/debug/shopContext", (req, res) => {
+  try {
+    const { shop, plan, active, source } = res.locals.shopContext;
+    const { cacheHits, cacheMisses, originFetches } = getShopContextStats();
+    return res.status(200).json({
+      shop,
+      plan,
+      active,
+      source,
+      cacheHits,
+      cacheMisses,
+      originFetches,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(400).send({ error: true });
+  }
+});
 
 /**
  * @param {import('express').Request} req - Express request object
@@ -38,7 +66,7 @@ userRoutes.get("/debug/gql", async (req, res) => {
   try {
     //false for offline session, true for online session
     const { client } = await clientProvider.offline.graphqlClient({
-      shop: res.locals.user_session.shop,
+      shop: res.locals.shopContext.shop,
     });
 
     const shop = await client.request(/* GraphQL */ `
@@ -63,7 +91,7 @@ userRoutes.get("/debug/gql", async (req, res) => {
 userRoutes.get("/debug/activeWebhooks", async (req, res) => {
   try {
     const { client } = await clientProvider.offline.graphqlClient({
-      shop: res.locals.user_session.shop,
+      shop: res.locals.shopContext.shop,
     });
     const activeWebhooks = await client.request(/* GraphQL */ `
       {
@@ -96,7 +124,7 @@ userRoutes.get("/debug/activeWebhooks", async (req, res) => {
 userRoutes.get("/debug/getActiveSubscriptions", async (req, res) => {
   try {
     const { client } = await clientProvider.offline.graphqlClient({
-      shop: res.locals.user_session.shop,
+      shop: res.locals.shopContext.shop,
     });
     const response = await client.request(/* GraphQL */ `
       {
@@ -138,7 +166,7 @@ userRoutes.get("/debug/getActiveSubscriptions", async (req, res) => {
 userRoutes.get("/debug/createNewSubscription", async (req, res) => {
   try {
     const { client, shop } = await clientProvider.offline.graphqlClient({
-      shop: res.locals.user_session.shop,
+      shop: res.locals.shopContext.shop,
     });
     const returnUrl = `${process.env.SHOPIFY_APP_URL}/?shop=${shop}`;
 
@@ -201,6 +229,15 @@ userRoutes.get("/debug/createNewSubscription", async (req, res) => {
       res.status(400).send({ error: "An error occured." });
       return;
     }
+
+    // Subscription changed: bump the plan version and void the cached
+    // shop context immediately so old plan data can't leak into new requests.
+    const updatedStore = await StoreModel.findOneAndUpdate(
+      { shop },
+      { plan: planName, $inc: { planVersion: 1 } },
+      { new: true, upsert: true }
+    );
+    invalidateShopContext(shop, updatedStore.planVersion);
 
     return res.status(200).send({
       confirmationUrl: `${response.data.appSubscriptionCreate.confirmationUrl}`,

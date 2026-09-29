@@ -6,7 +6,6 @@ import fs from "fs";
 import mongoose from "mongoose";
 import path, { resolve } from "path";
 import { createServer as createViteServer } from "vite";
-import sessionHandler from "../utils/sessionHandler.js";
 import setupCheck from "../utils/setupCheck.js";
 import shopify from "../utils/shopify.js";
 import {
@@ -17,10 +16,9 @@ import {
 import eventHandler from "./events/_index.js";
 import csp from "./middleware/csp.js";
 import isInitialLoad from "./middleware/isInitialLoad.js";
+import resolveShopContext from "./middleware/shopContext.js";
 import verifyCheckout from "./middleware/verifyCheckout.js";
-import verifyHmac from "./middleware/verifyHmac.js";
 import verifyProxy from "./middleware/verifyProxy.js";
-import verifyRequest from "./middleware/verifyRequest.js";
 import proxyRouter from "./routes/app_proxy/index.js";
 import checkoutRoutes from "./routes/checkout/index.js";
 import userRoutes from "./routes/index.js";
@@ -55,14 +53,9 @@ const createServer = async (root = process.cwd()) => {
 
   app.use(Express.json());
 
-  app.post("/api/graphql", verifyRequest, async (req, res) => {
+  app.post("/api/graphql", resolveShopContext, async (req, res) => {
     try {
-      const sessionId = await shopify.session.getCurrentId({
-        isOnline: true,
-        rawRequest: req,
-        rawResponse: res,
-      });
-      const session = await sessionHandler.loadSession(sessionId);
+      const { session } = res.locals.shopContext;
       const response = await shopify.clients.graphqlProxy({
         session,
         rawBody: req.body,
@@ -77,7 +70,7 @@ const createServer = async (root = process.cwd()) => {
   app.use(csp);
   app.use(isInitialLoad);
   //Routes to make server calls
-  app.use("/api/apps", verifyRequest, userRoutes); //Verify user route requests
+  app.use("/api/apps", resolveShopContext, userRoutes); //Verify user route requests
   app.use("/api/proxy_route", verifyProxy, proxyRouter); //MARK:- App Proxy routes
   app.use(
     "/api/checkout",
@@ -91,7 +84,7 @@ const createServer = async (root = process.cwd()) => {
     checkoutRoutes
   );
 
-  app.post("/api/gdpr/:topic", verifyHmac, async (req, res) => {
+  app.post("/api/gdpr/:topic", resolveShopContext, async (req, res) => {
     const { body } = req;
     const { topic } = req.params;
     const shop = req.body.shop_domain;

@@ -6,6 +6,7 @@
  *
  */
 import StoreModel from "./models/StoreModel.js";
+import { invalidateShopContext } from "../server/middleware/shopContext.js";
 
 const freshInstall = async ({ shop }) => {
   console.log("This is a fresh install - run functions");
@@ -14,6 +15,7 @@ const freshInstall = async ({ shop }) => {
     { isActive: true },
     { upsert: true }
   );
+  invalidateShopContext(shop);
 };
 
 export default freshInstall;
