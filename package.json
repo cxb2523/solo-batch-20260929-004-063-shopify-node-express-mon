@@ -1,0 +1,55 @@
+{
+  "name": "shopify-express-boilerplate",
+  "version": "2026.09.11",
+  "description": "Shopify Boilerplate Code written in React, Node, Express, MongoDB and GraphQL",
+  "type": "module",
+  "author": {
+    "name": "Harshdeep Singh Hura",
+    "url": "https://harshdeephura.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kinngh/shopify-node-express-mongodb-app.git"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=dev nodemon server/index.js --ignore client/ --ignore dist/ ",
+    "build": "vite build --config=./client/vite.config.js",
+    "start": "NODE_ENV=prod node server/index.js",
+    "-----> utils <-----": "",
+    "update": "ncu -u",
+    "pretty": "prettier --write .",
+    "-----> Tunnel <-----": "",
+    "cloudflare": "cloudflared tunnel --url localhost:8081",
+    "-----> Shopify <-----": "",
+    "g:install": "npm i -g @shopify/cli@latest",
+    "shopify": "shopify",
+    "update:config": "node _developer/tomlWriter.js; npm run pretty; shopify app deploy;",
+    "update:url": "node _developer/updateDashboard.js",
+    "-----> Reserved Scripts <-----": "",
+    "preserve": "npm run build"
+  },
+  "dependencies": {
+    "@shopify/polaris": "^13.9.5",
+    "@shopify/shopify-api": "^14.0.1",
+    "compression": "^1.8.2",
+    "cors": "^2.8.6",
+    "cryptr": "^6.4.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.10.0",
+    "raviger": "^5.3.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "serve-static": "^2.2.1"
+  },
+  "devDependencies": {
+    "@iarna/toml": "^2.2.5",
+    "@shopify/polaris-types": "^1.0.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^10.0.5",
+    "nodemon": "^3.1.14",
+    "npm-check-updates": "^23.1.0",
+    "prettier": "^3.9.6",
+    "vite": "^8.3.0"
+  }
+}
