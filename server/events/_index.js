@@ -5,33 +5,18 @@
  * To update this file, run `npm run update:config` or `bun run update:config`
  */
 
-import shopify from "../../utils/shopify.js";
-
 const eventHandler = async (req, res) => {
+  const { shop } = res.locals.shop_context;
   const topic = req.headers["shopify-topic"] || "";
-  const shop = req.headers["shopify-shop-domain"] || "";
   const apiVersion = req.headers["shopify-api-version"] || "";
   const handle = req.headers["shopify-handle"] || "";
   const webhookId = req.headers["shopify-webhook-id"] || "";
 
   try {
-    const validateEvent = await shopify.webhooks.validate({
-      rawBody: req.body,
-      rawRequest: req,
-      rawResponse: res,
-    });
-
-    if (validateEvent.valid) {
-    } else {
-      return res.status(400).send({ error: true });
-    }
-
-    const eventHandle = validateEvent.handle || handle;
-
     //SWITCHCASE
-    switch (eventHandle) {
+    switch (handle) {
       default:
-        throw new Error(`Can't find a handler for ${eventHandle}`);
+        throw new Error(`Can't find a handler for ${handle}`);
     }
     //SWITCHCASE END
     console.log(`--> Processed ${topic} webhook for ${shop}`);

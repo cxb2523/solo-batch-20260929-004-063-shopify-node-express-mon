@@ -7,34 +7,22 @@
  * To update this file, run `npm run update:config` or `bun run update:config`
  */
 
-import shopify from "../../utils/shopify.js";
 import appUninstallHandler from "./app_uninstalled.js";
 
 const webhookHandler = async (req, res) => {
+  const { shop } = res.locals.shop_context;
   const topic = req.headers["x-shopify-topic"] || "";
-  const shop = req.headers["x-shopify-shop-domain"] || "";
   const apiVersion = req.headers["x-shopify-api-version"] || "";
   const webhookId = req.headers["x-shopify-webhook-id"] || "";
 
   try {
-    const validateWebhook = await shopify.webhooks.validate({
-      rawBody: req.body,
-      rawRequest: req,
-      rawResponse: res,
-    });
-
-    if (validateWebhook.valid) {
-    } else {
-      return res.status(400).send({ error: true });
-    }
-
     //SWITCHCASE
-    switch (validateWebhook.topic) {
-      case "APP_UNINSTALLED":
+    switch (topic.toLowerCase()) {
+      case "app/uninstalled":
         await appUninstallHandler(topic, shop, req.body, webhookId, apiVersion);
         break;
       default:
-        throw new Error(`Can't find a handler for ${validateWebhook.topic}`);
+        throw new Error(`Can't find a handler for ${topic}`);
     }
     //SWITCHCASE END
     console.log(`--> Processed ${topic} webhook for ${shop}`);

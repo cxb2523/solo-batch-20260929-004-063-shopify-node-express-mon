@@ -15,6 +15,7 @@
     "dev": "NODE_ENV=dev nodemon server/index.js --ignore client/ --ignore dist/ ",
     "build": "vite build --config=./client/vite.config.js",
     "start": "NODE_ENV=prod node server/index.js",
+    "lint": "prettier --check \"server/**/*.js\" \"utils/**/*.js\" \"client/**/*.{js,jsx}\" \"web/**/*.jsx\"",
     "-----> utils <-----": "",
     "update": "ncu -u",
     "pretty": "prettier --write .",

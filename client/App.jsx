@@ -14,6 +14,7 @@ export default function App() {
         <ui-nav-menu>
           <a href="/debug/data">Fetch Data</a>
           <a href="/debug/billing">Billing API</a>
+          <a href="/debug/shop-context">Shop Context</a>
         </ui-nav-menu>
         {RouteComponents}
       </AppBridgeProvider>

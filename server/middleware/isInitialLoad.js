@@ -3,6 +3,7 @@ import StoreModel from "../../utils/models/StoreModel.js";
 import sessionHandler from "../../utils/sessionHandler.js";
 import shopify from "../../utils/shopify.js";
 import freshInstall from "../../utils/freshInstall.js";
+import { invalidateShopContext } from "./shopContext.js";
 
 /**
  * @param {import('express').Request} req - Express request object
@@ -41,6 +42,7 @@ const isInitialLoad = async (req, res, next) => {
       if (!isFreshInstall || isFreshInstall?.isActive === false) {
         // !isFreshInstall -> New Install
         // isFreshInstall?.isActive === false -> Reinstall
+        invalidateShopContext(onlineSession.shop);
         await freshInstall({ shop: onlineSession.shop });
       }
 

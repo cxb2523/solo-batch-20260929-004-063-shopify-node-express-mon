@@ -1,5 +1,6 @@
 import { Router } from "express";
 import clientProvider from "../../utils/clientProvider.js";
+import { getCacheHits } from "../middleware/shopContext.js";
 
 const userRoutes = Router();
 
@@ -15,6 +16,24 @@ userRoutes.get("/", (req, res) => {
     console.error(e);
     return res.status(400).send({ error: true });
   }
+});
+
+/**
+ * Returns the resolved shop context plus cumulative subscription-cache hits.
+ * Polled every 5s by the Shop Context debug page.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+userRoutes.get("/debug/shop-context", (req, res) => {
+  const { shop, source, plan, active } = res.locals.shop_context;
+  return res.status(200).json({
+    shop,
+    source,
+    plan,
+    active,
+    cacheHits: getCacheHits(shop),
+  });
 });
 
 /**
@@ -38,7 +57,7 @@ userRoutes.get("/debug/gql", async (req, res) => {
   try {
     //false for offline session, true for online session
     const { client } = await clientProvider.offline.graphqlClient({
-      shop: res.locals.user_session.shop,
+      shop: res.locals.shop_context.shop,
     });
 
     const shop = await client.request(/* GraphQL */ `
@@ -63,7 +82,7 @@ userRoutes.get("/debug/gql", async (req, res) => {
 userRoutes.get("/debug/activeWebhooks", async (req, res) => {
   try {
     const { client } = await clientProvider.offline.graphqlClient({
-      shop: res.locals.user_session.shop,
+      shop: res.locals.shop_context.shop,
     });
     const activeWebhooks = await client.request(/* GraphQL */ `
       {
@@ -96,7 +115,7 @@ userRoutes.get("/debug/activeWebhooks", async (req, res) => {
 userRoutes.get("/debug/getActiveSubscriptions", async (req, res) => {
   try {
     const { client } = await clientProvider.offline.graphqlClient({
-      shop: res.locals.user_session.shop,
+      shop: res.locals.shop_context.shop,
     });
     const response = await client.request(/* GraphQL */ `
       {
@@ -138,7 +157,7 @@ userRoutes.get("/debug/getActiveSubscriptions", async (req, res) => {
 userRoutes.get("/debug/createNewSubscription", async (req, res) => {
   try {
     const { client, shop } = await clientProvider.offline.graphqlClient({
-      shop: res.locals.user_session.shop,
+      shop: res.locals.shop_context.shop,
     });
     const returnUrl = `${process.env.SHOPIFY_APP_URL}/?shop=${shop}`;
 
